@@ -1,3 +1,4 @@
 # Random_Codes
 
-Hey Guys, I will update this as I continue to learn how to code and get into coding.
+Welcome to my GitHub page. 
+This page will mostly be about machine learning and python data analysis, but there will also be the occasional Java- or HTML project to keep my memory fresh :)
