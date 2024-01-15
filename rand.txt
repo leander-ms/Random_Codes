@@ -25,12 +25,7 @@ Public Sub InsertDataFromExcel(RangeToInsert As Range, TableName As String, Opti
         For Each cell In row.Cells
             ' Check if the cell is empty
             If IsEmpty(cell.Value) Or cell.Value = "" Then
-                ' Determine if the column is supposed to be numeric or text
-                If IsNumeric(cell.NumberFormat) Then
-                    cellValue = "NULL"
-                Else
-                    cellValue = "''"
-                End If
+                cellValue = "NULL"
             ElseIf IsNumeric(cell.Value) Then
                 ' Convert the decimal separator from comma to period for floats
                 cellValue = Replace(cell.Value, ",", ".")
@@ -40,30 +35,29 @@ Public Sub InsertDataFromExcel(RangeToInsert As Range, TableName As String, Opti
             End If
 
             ' Add the formatted value to the rowValues string
-            rowValues = rowValues & cellValue & ","
-        Next cell
+rowValues = rowValues & cellValue & ","
+    Next cell
 
-        ' Remove the last comma from the rowValues string
-        rowValues = Left(rowValues, Len(rowValues) - 1)
+    ' Remove the last comma from the rowValues string
+    rowValues = Left(rowValues, Len(rowValues) - 1)
 
-        ' Add this row's values to the insert query
-        If rowCount = 1 Then
-            insertQuery = insertQuery & "(" & rowValues & ")"
-        Else
-            insertQuery = insertQuery & ",(" & rowValues & ")"
-        End If
-
-        ' Execute the query in batches
-        If rowCount Mod BatchSize = 0 Then
-            conn.Execute insertQuery
-            rowCount = 0
-            insertQuery = "INSERT INTO " & TableName & " VALUES "
-        End If
-    Next row
-
-    ' Execute any remaining rows not included in the last batch
-    If rowCount > 0 Then
-        conn.Execute insertQuery
+    ' Add this row's values to the insert query
+    If rowCount = 1 Then
+        insertQuery = insertQuery & "(" & rowValues & ")"
+    Else
+        insertQuery = insertQuery & ",(" & rowValues & ")"
     End If
-End Sub
 
+    ' Execute the query in batches
+    If rowCount Mod BatchSize = 0 Then
+        conn.Execute insertQuery
+        rowCount = 0
+        insertQuery = "INSERT INTO " & TableName & " VALUES "
+    End If
+Next row
+
+' Execute any remaining rows not included in the last batch
+If rowCount > 0 Then
+    conn.Execute insertQuery
+End If
+End Sub
