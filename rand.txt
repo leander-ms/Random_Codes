@@ -1,63 +1,23 @@
-Public Sub InsertDataFromExcel(RangeToInsert As Range, TableName As String, Optional BatchSize As Long = 100, Optional ID_Column As Boolean = False)
-    Dim cell As Range
-    Dim rowValues As String
-    Dim row As Range
-    Dim insertQuery As String
-    Dim rowCount As Long
-    Dim cellValue As String
-    Dim excelRowNumber As Long
+from sqlalchemy import create_engine
+import pandas as pd
 
-    rowCount = 0
-    insertQuery = "INSERT INTO " & TableName & " VALUES "
+# Define your connection string
+# Replace 'path_to_your_database' with the actual path to your Access database file
+database_path = 'path_to_your_database.accdb'
+conn_str = f'mssql+pyodbc:///?odbc_connect=Driver={{Microsoft Access Driver (*.mdb, *.accdb)}};DBQ={database_path};'
 
-    ' Loop through each row in the specified range
-    For Each row In RangeToInsert.Rows
-        rowCount = rowCount + 1
-        rowValues = ""
-        
-        ' Include Excel row number as ID if ID_Column is True
-        If ID_Column Then
-            excelRowNumber = row.Row
-            rowValues = excelRowNumber & ","
-        End If
+# Create an engine
+engine = create_engine(conn_str)
 
-        ' Loop through each cell in the row
-        For Each cell In row.Cells
-            ' Check if the cell is empty
-            If IsEmpty(cell.Value) Or cell.Value = "" Then
-                cellValue = "NULL"
-            ElseIf IsNumeric(cell.Value) Then
-                ' Convert the decimal separator from comma to period for floats
-                cellValue = Replace(cell.Value, ",", ".")
-            Else
-                ' For text, replace single quotes and enclose the value in single quotes
-                cellValue = "'" & Replace(cell.Value, "'", "''") & "'"
-            End If
+# Define your SQL query
+query = "SELECT * FROM YourTableName"  # Replace with your query
 
-            ' Add the formatted value to the rowValues string
-rowValues = rowValues & cellValue & ","
-    Next cell
+# Execute the query and fetch results into a Pandas DataFrame
+with engine.connect() as conn:
+    result = pd.read_sql(query, conn)
 
-    ' Remove the last comma from the rowValues string
-    rowValues = Left(rowValues, Len(rowValues) - 1)
+# Print the result
+print(result)
 
-    ' Add this row's values to the insert query
-    If rowCount = 1 Then
-        insertQuery = insertQuery & "(" & rowValues & ")"
-    Else
-        insertQuery = insertQuery & ",(" & rowValues & ")"
-    End If
-
-    ' Execute the query in batches
-    If rowCount Mod BatchSize = 0 Then
-        conn.Execute insertQuery
-        rowCount = 0
-        insertQuery = "INSERT INTO " & TableName & " VALUES "
-    End If
-Next row
-
-' Execute any remaining rows not included in the last batch
-If rowCount > 0 Then
-    conn.Execute insertQuery
-End If
-End Sub
+# Close the engine (optional, as it's automatically closed when out of scope)
+engine.dispose()
