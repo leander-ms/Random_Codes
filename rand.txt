@@ -1,23 +1,32 @@
-from sqlalchemy import create_engine
-import pandas as pd
+def format_guv_sheet(writer, sheet_name):
+    workbook = load_workbook(writer.path)
+    worksheet = workbook[sheet_name]
 
-# Define your connection string
-# Replace 'path_to_your_database' with the actual path to your Access database file
-database_path = 'path_to_your_database.accdb'
-conn_str = f'mssql+pyodbc:///?odbc_connect=Driver={{Microsoft Access Driver (*.mdb, *.accdb)}};DBQ={database_path};'
+    # Apply header formatting
+    for cell in worksheet[1]:
+        cell.font = Font(bold=True, color='FFFFFF')
+        cell.fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type='solid')
+        cell.alignment = Alignment(horizontal='center', vertical='center')
 
-# Create an engine
-engine = create_engine(conn_str)
+    # Rows to be bold
+    bold_rows = [1, 3, 9, 14, 15, 21, 26, 30]
 
-# Define your SQL query
-query = "SELECT * FROM YourTableName"  # Replace with your query
+    for row in bold_rows:
+        for cell in worksheet[row]:
+            cell.font = Font(bold=True)
 
-# Execute the query and fetch results into a Pandas DataFrame
-with engine.connect() as conn:
-    result = pd.read_sql(query, conn)
+    # Adjust column widths to autofit
+    for col in worksheet.columns:
+        max_length = 0
+        column = col[0].column_letter  # Get the column name
+        for cell in col:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        worksheet.column_dimensions[column].width = adjusted_width
 
-# Print the result
-print(result)
-
-# Close the engine (optional, as it's automatically closed when out of scope)
-engine.dispose()
+    # Save the workbook
+    workbook.save(writer.path)
