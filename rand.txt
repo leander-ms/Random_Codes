@@ -1,21 +1,28 @@
-# Define the file path
-$filePath = "C:\Path\To\Your\File.docx"
+# Define the directory to search and the person's name to filter by
+$directoryPath = "C:\YourFolder"
+$searchName = "NameOfPerson"
 
-# Check if the file exists
-if (Test-Path $filePath) {
-    # Use Shell.Application COM object to access file metadata
-    $shell = New-Object -ComObject Shell.Application
-    $folder = $shell.Namespace((Get-Item $filePath).DirectoryName)
-    $file = $folder.ParseName((Get-Item $filePath).Name)
-    
-    # Retrieve the "Last Saved By" property by its index
-    $lastSavedBy = $folder.GetDetailsOf($file, 20)  # Index may vary, usually 20 in Office files
-    
-    if ($lastSavedBy) {
-        Write-Output "Last saved by: $lastSavedBy"
-    } else {
-        Write-Output "The file does not have a 'Last Saved By' property."
+# Use Shell.Application COM object to access file metadata
+$shell = New-Object -ComObject Shell.Application
+
+# Check if the directory exists
+if (Test-Path $directoryPath) {
+    # Loop through each file in the directory
+    Get-ChildItem -Path $directoryPath -Recurse -File | ForEach-Object {
+        $filePath = $_.FullName
+        $folder = $shell.Namespace((Get-Item $filePath).DirectoryName)
+        $file = $folder.ParseName((Get-Item $filePath).Name)
+        
+        # Retrieve the "Last Saved By" property (index 10 in this case)
+        $lastSavedBy = $folder.GetDetailsOf($file, 10)
+        
+        # Check if the property matches the specified person
+        if ($lastSavedBy -eq $searchName) {
+            Write-Output "File: $filePath"
+            Write-Output "Last saved by: $lastSavedBy"
+            Write-Output "------------------------"
+        }
     }
 } else {
-    Write-Output "File not found at the specified path."
+    Write-Output "Directory not found at the specified path."
 }
