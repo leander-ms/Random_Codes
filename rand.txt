@@ -1,2 +1,19 @@
-    numbers = [p for p in parts if re.match(r'^-?\d{1,3}(?:\.\d{3})*(?:,\d+)?$', p)]
-    words = [p for p in parts if not re.match(r'^-?\d{1,3}(?:\.\d{3})*(?:,\d+)?$', p)]
+# Define the file path
+$filePath = "C:\Path\To\Your\File.docx"
+
+# Check if the file exists
+if (Test-Path $filePath) {
+    # Try to retrieve the "LastSavedBy" property
+    try {
+        $file = Get-Item -Path $filePath
+        $property = $file | Get-ItemProperty -Name "LastSavedBy" -ErrorAction Stop
+        
+        # Display the "Last Saved By" information
+        Write-Output "Last saved by: $($property.LastSavedBy)"
+    }
+    catch {
+        Write-Output "The file does not have a 'LastSavedBy' property or it's not accessible."
+    }
+} else {
+    Write-Output "File not found at the specified path."
+}
