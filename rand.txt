@@ -3,16 +3,18 @@ $filePath = "C:\Path\To\Your\File.docx"
 
 # Check if the file exists
 if (Test-Path $filePath) {
-    # Try to retrieve the "LastSavedBy" property
-    try {
-        $file = Get-Item -Path $filePath
-        $property = $file | Get-ItemProperty -Name "LastSavedBy" -ErrorAction Stop
-        
-        # Display the "Last Saved By" information
-        Write-Output "Last saved by: $($property.LastSavedBy)"
-    }
-    catch {
-        Write-Output "The file does not have a 'LastSavedBy' property or it's not accessible."
+    # Use Shell.Application COM object to access file metadata
+    $shell = New-Object -ComObject Shell.Application
+    $folder = $shell.Namespace((Get-Item $filePath).DirectoryName)
+    $file = $folder.ParseName((Get-Item $filePath).Name)
+    
+    # Retrieve the "Last Saved By" property by its index
+    $lastSavedBy = $folder.GetDetailsOf($file, 20)  # Index may vary, usually 20 in Office files
+    
+    if ($lastSavedBy) {
+        Write-Output "Last saved by: $lastSavedBy"
+    } else {
+        Write-Output "The file does not have a 'Last Saved By' property."
     }
 } else {
     Write-Output "File not found at the specified path."
