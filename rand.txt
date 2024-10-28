@@ -1,6 +1,10 @@
-# Define the directory to search and the person's name to filter by
+# Define the directory to search, the person's name to filter by, and the output file path
 $directoryPath = "C:\YourFolder"
 $searchName = "NameOfPerson"
+$outputFilePath = "C:\Path\To\Output.txt"
+
+# Initialize output file
+Out-File -FilePath $outputFilePath -Force -Encoding UTF8
 
 # Use Shell.Application COM object to access file metadata
 $shell = New-Object -ComObject Shell.Application
@@ -18,11 +22,14 @@ if (Test-Path $directoryPath) {
         
         # Check if the property matches the specified person
         if ($lastSavedBy -eq $searchName) {
-            Write-Output "File: $filePath"
-            Write-Output "Last saved by: $lastSavedBy"
-            Write-Output "------------------------"
+            # Append output to the file
+            Add-Content -Path $outputFilePath -Value "File: $filePath"
+            Add-Content -Path $outputFilePath -Value "Last saved by: $lastSavedBy"
+            Add-Content -Path $outputFilePath -Value "------------------------"
         }
     }
+    
+    Write-Output "Results written to $outputFilePath"
 } else {
     Write-Output "Directory not found at the specified path."
 }
