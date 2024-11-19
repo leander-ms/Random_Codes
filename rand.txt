@@ -2,22 +2,22 @@ import os
 import xml.etree.ElementTree as ET
 
 def process_xml_files(folder_path):
-    # Get a list of all .xml files in the directory
     xml_files = [f for f in os.listdir(folder_path) if f.endswith('.xml')]
 
     for file_name in xml_files:
         file_path = os.path.join(folder_path, file_name)
         try:
-            # Parse the XML file
             tree = ET.parse(file_path)
             root = tree.getroot()
 
-            # Look for the <sheetProtection> node
-            sheet_protection = root.find("sheetProtection")
+            # Handle namespaces dynamically
+            namespaces = {k: v for event, elem in ET.iterparse(file_path, events=['start-ns']) for k, v in [elem]}
+            sheet_protection_tag = f"{{{list(namespaces.values())[0]}}}sheetProtection" if namespaces else "sheetProtection"
+
+            # Look for <sheetProtection> with or without namespaces
+            sheet_protection = root.find(sheet_protection_tag)
             if sheet_protection is not None:
-                # Remove the <sheetProtection> node
                 root.remove(sheet_protection)
-                # Save the updated XML file
                 tree.write(file_path, encoding="utf-8", xml_declaration=True)
                 print(f"Removed <sheetProtection> from {file_name}")
             else:
@@ -28,7 +28,6 @@ def process_xml_files(folder_path):
             print(f"Unexpected error with {file_name}: {e}")
 
 if __name__ == "__main__":
-    # Specify the folder containing the XML files
     folder_path = input("Enter the path to the folder containing the XML files: ").strip()
     if os.path.exists(folder_path) and os.path.isdir(folder_path):
         process_xml_files(folder_path)
