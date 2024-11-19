@@ -1,35 +1,36 @@
-# Define the directory to search, the person's name to filter by, and the output file path
-$directoryPath = "C:\YourFolder"
-$searchName = "NameOfPerson"
-$outputFilePath = "C:\Path\To\Output.txt"
+import os
+import xml.etree.ElementTree as ET
 
-# Initialize output file
-Out-File -FilePath $outputFilePath -Force -Encoding UTF8
+def process_xml_files(folder_path):
+    # Get a list of all .xml files in the directory
+    xml_files = [f for f in os.listdir(folder_path) if f.endswith('.xml')]
 
-# Use Shell.Application COM object to access file metadata
-$shell = New-Object -ComObject Shell.Application
+    for file_name in xml_files:
+        file_path = os.path.join(folder_path, file_name)
+        try:
+            # Parse the XML file
+            tree = ET.parse(file_path)
+            root = tree.getroot()
 
-# Check if the directory exists
-if (Test-Path $directoryPath) {
-    # Loop through each file in the directory
-    Get-ChildItem -Path $directoryPath -Recurse -File | ForEach-Object {
-        $filePath = $_.FullName
-        $folder = $shell.Namespace((Get-Item $filePath).DirectoryName)
-        $file = $folder.ParseName((Get-Item $filePath).Name)
-        
-        # Retrieve the "Last Saved By" property (index 10 in this case)
-        $lastSavedBy = $folder.GetDetailsOf($file, 10)
-        
-        # Check if the property matches the specified person
-        if ($lastSavedBy -eq $searchName) {
-            # Append output to the file
-            Add-Content -Path $outputFilePath -Value "File: $filePath"
-            Add-Content -Path $outputFilePath -Value "Last saved by: $lastSavedBy"
-            Add-Content -Path $outputFilePath -Value "------------------------"
-        }
-    }
-    
-    Write-Output "Results written to $outputFilePath"
-} else {
-    Write-Output "Directory not found at the specified path."
-}
+            # Look for the <sheetProtection> node
+            sheet_protection = root.find("sheetProtection")
+            if sheet_protection is not None:
+                # Remove the <sheetProtection> node
+                root.remove(sheet_protection)
+                # Save the updated XML file
+                tree.write(file_path, encoding="utf-8", xml_declaration=True)
+                print(f"Removed <sheetProtection> from {file_name}")
+            else:
+                print(f"No <sheetProtection> node found in {file_name}")
+        except ET.ParseError as e:
+            print(f"Error parsing {file_name}: {e}")
+        except Exception as e:
+            print(f"Unexpected error with {file_name}: {e}")
+
+if __name__ == "__main__":
+    # Specify the folder containing the XML files
+    folder_path = input("Enter the path to the folder containing the XML files: ").strip()
+    if os.path.exists(folder_path) and os.path.isdir(folder_path):
+        process_xml_files(folder_path)
+    else:
+        print("Invalid folder path.")
